@@ -33,7 +33,7 @@ from peft import (
 warnings.filterwarnings('ignore')
 
 torch.manual_seed(42)
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -86,9 +86,7 @@ class SA_exactor(nn.Module):
         input_ids = torch.tensor(x['input_ids']).to(device)
         attention_mask = torch.tensor(x['attention_mask']).to(device)
         
-        hidden_states = self.extractor(input_ids, attention_mask = attention_mask)
-        # last_hidden_states = hidden_states[1][0][:,0,:] 
-        # x_feat = hidden_states[1][0][:,0,:]  
+        hidden_states = self.extractor(input_ids, attention_mask = attention_mask) 
         x_feat = hidden_states[0][:,0,:]  
         # output = self.classifier(x_feat)
         return x_feat
@@ -107,7 +105,6 @@ class SA_classifier(nn.Module):
         # self.classifier = MLP(layer_sizes)
         self.classifier = DisMaxLossFirstPart(layer_sizes[0], layer_sizes[1])
         self.eta = nn.Parameter(torch.Tensor(eta)) 
-        # self.adapter = MLP([layer_sizes[0], layer_sizes[0]], final_relu= True)
         # self.freeze_bert()
     
     def freeze_bert(self):
@@ -117,15 +114,7 @@ class SA_classifier(nn.Module):
         for param in self.extractor.named_parameters():
             param[1].requires_grad=False 
                
-    # def forward(self, x, Feature_return = False):
-    #     x_feat = self.extractor(x)
-    #     if Feature_return:
-    #         return x_feat
-        
-    #     x_feat = self.dropout(x_feat)
-    #     output = self.classifier(x_feat)
-    #     return output
-    
+
     def forward(self, x, Feature_return = False):
         input_ids = torch.tensor(x['input_ids']).to(device)
         attention_mask = torch.tensor(x['attention_mask']).to(device)
@@ -141,14 +130,14 @@ class SA_classifier(nn.Module):
   
 def prompt(model):
     
-    # peft_type = PeftType.PROMPT_TUNING
-    # peft_config = PromptTuningConfig(task_type="FEATURE_EXTRACTION", 
-    #                                 #  token_dim=768, 
-    #                                 #  num_attention_heads = 2, num_layers=2, 
-    #                                  num_virtual_tokens=10,
-    #                                 #  prompt_tuning_init="TEXT",
-    #                                 #  prompt_tuning_init_text="Predict if sentiment of this review is positive, negative or neutral"
-    # )
+    peft_type = PeftType.PROMPT_TUNING
+    peft_config = PromptTuningConfig(task_type="FEATURE_EXTRACTION", 
+                                    #  token_dim=768, 
+                                    #  num_attention_heads = 2, num_layers=2, 
+                                     num_virtual_tokens=10,
+                                    #  prompt_tuning_init="TEXT",
+                                    #  prompt_tuning_init_text="Predict if sentiment of this review is positive, negative or neutral"
+    )
 #     peft_config = LoraConfig(
 #     task_type= "FEATURE_EXTRACTION", r=8, lora_alpha=32, lora_dropout=0.1,
 #     target_modules=['query', 'value'],
@@ -156,12 +145,12 @@ def prompt(model):
     
 # )
     # prefix tuning
-    peft_type = PeftType.PREFIX_TUNING
-    peft_config = PrefixTuningConfig(task_type="FEATURE_EXTRACTION", 
-                                    #  num_layers = 12,
-                                    #  token_dim = 768,
-                                    #  num_attention_heads = 12,
-                                     num_virtual_tokens=10)
+    # peft_type = PeftType.PREFIX_TUNING
+    # peft_config = PrefixTuningConfig(task_type="FEATURE_EXTRACTION", 
+    #                                 #  num_layers = 12,
+    #                                 #  token_dim = 768,
+    #                                 #  num_attention_heads = 12,
+    #                                  num_virtual_tokens=10)
    
    
     # peft_type = PeftType.IA3
@@ -179,7 +168,7 @@ if __name__ == "__main__":
     test_path = './SST2_test.tsv'
     os.makedirs(task_path, exist_ok=True)
     os.makedirs(emb_path, exist_ok=True)
-    task_path = os.path.join(task_path, 'full_tuning_dml.pth')
+    task_path = os.path.join(task_path, 'hh3.pth')
     emb_train_path = os.path.join(emb_path, 'emb_train')
     emb_test_path = os.path.join(emb_path, 'emb_test')
     train_dataset, val_dataset = SA_processing(train_path, val_path)
@@ -190,23 +179,17 @@ if __name__ == "__main__":
     model_name = 'bert-base-uncased'
     extractor = BertModel.from_pretrained(model_name)
     
-    # distill bert 
-    # model_name = 'distilbert-base-uncased'
-    # extractor = ppb.DistilBertModel.from_pretrained(model_name)
-    # sac = prompt(extractor)
-    # hhh
-    # model = SA_classifier(extractor, [768,2])
-    # sac = prompt(model)
-    # sac = prompt(extractor)
-    sac = extractor 
+    
+    sac = prompt(extractor)
+    # sac = extractor 
    
     # bert params trainable
     n_components = 768
     layer_sizes = [n_components, 2]
     
     task = SA_classifier(sac, layer_sizes).to(device)
-    lr = 1e-5
-    epoch = 200
+    lr = 4e-2
+    epoch = 100
     step_size = 10
     run_task(task_path, task, train_loader, val_loader, lr, epoch)
     set_model(task, task_path) 

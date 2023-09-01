@@ -146,6 +146,5 @@ def run_task(model_path, model, train_loader, test_loader, lr = 2e-5, epoch = 30
                 )
     if os.path.isfile(model_path):
         resume_model(model_path, model, opt, scheduler)
-        # test(model, test_loader)
     
     train(model, opt, scheduler, train_loader, test_loader, epoch, model_path)
