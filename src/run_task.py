@@ -21,7 +21,7 @@ def save_model(model, optimizer, epoch, lr_sched, save_file = None):
         'model': model.state_dict(),
         'optimizer': optimizer.state_dict(),
         'epoch': epoch,
-        'lr_sched': lr_sched.state_dict() 
+        'lr_sched': lr_sched.state_dict()
     }
     torch.save(state, save_file)
     del state
@@ -50,15 +50,14 @@ def validate(model, vali_loader):
         
     return correct / len(vali_loader.dataset)
 
-def train(model, optimizer, scheduler, train_loader, vali_loader, epoch, model_path, classifier):
+def train(model, optimizer, scheduler, train_loader, vali_loader, epoch, model_path, classifier, best_vali_acc):
   model.train()
   now = datetime.now()
   dt = now.strftime("%d-%m-%y_%H-%M-%S")
   logger = SummaryWriter(log_dir=f"./tf-logs/{dt}")
   criterion = nn.CrossEntropyLoss()
   loss_feat = losses.TripletMarginLoss()
-  best_vali_er = np.inf
-  best_vali_acc = 0
+  print(best_vali_acc)
   for ep in tqdm(range(epoch)):
     model.train()
     train_loss = 0
@@ -98,8 +97,8 @@ def resume_model(model_path, model, optim, scheduler):
     optim.load_state_dict(checkpoint['optimizer'])
     scheduler.load_state_dict(checkpoint['lr_sched'])
     
-def run_task(model_path, model, train_loader, test_loader, lr, epoch, classifier):  
-   
+def run_task(model_path, model, train_loader, val_loader, lr, epoch, classifier):  
+    best_vali_acc = 0
     opt = AdamW(model.parameters(), lr=lr, correct_bias=False)
     total_steps = len(train_loader) * epoch
     scheduler = get_linear_schedule_with_warmup(
@@ -109,5 +108,6 @@ def run_task(model_path, model, train_loader, test_loader, lr, epoch, classifier
                 )
     if os.path.isfile(model_path):
         resume_model(model_path, model, opt, scheduler)
+        best_vali_acc = validate(model, val_loader)
     
-    train(model, opt, scheduler, train_loader, test_loader, epoch, model_path, classifier)
+    train(model, opt, scheduler, train_loader, val_loader, epoch, model_path, classifier, best_vali_acc)

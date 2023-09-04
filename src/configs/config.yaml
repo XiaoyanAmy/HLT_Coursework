@@ -11,11 +11,11 @@ model_name: roberta-base
 # where 0 stands for fine tuning
 # 1 stands for prompt tuning, and 
 # 2 stands for prefix tuning 
-tuning_method: 0
-model_save_name: all_roberta_li0.pth
-learning_rate: 1.0e-5
+tuning_method: 1
+model_save_name: all_roberta_li1.pth
+learning_rate: 2.0e-2
 classifier: li # please choose from {li, dml}, li stands for linear layer, dml stands for deep metric learning
 num_virtual_tokens : 7
-batch_size: 16
+batch_size: 32
 epoch: 50
 num_hidden_states: 768
