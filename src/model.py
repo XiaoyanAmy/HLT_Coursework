@@ -23,9 +23,7 @@ class MLP(nn.Module):
         self.last_linear = self.net[-1]
 
     def forward(self, x):
-        return self.net(x)
-    
-  
+        return self.net(x) 
 '''
 Class Dismax is adpated from the class DisMaxLossFirstPart from the following link:
 https://github.com/dlmacedo/robust-deep-learning/
@@ -45,16 +43,10 @@ class DisMax(nn.Module):
     def forward(self, features):
         distances_from_normalized_vectors = torch.cdist(
             F.normalize(features), F.normalize(self.prototypes), p=2.0, compute_mode="donot_use_mm_for_euclid_dist") / math.sqrt(2.0)    
-        
         isometric_distances = torch.abs(self.distance_scale) * distances_from_normalized_vectors
         logits = -(isometric_distances + isometric_distances.mean(dim=1, keepdim=True))
-        
         return logits / self.temperature
-
-  
-
-
-
+    
 class SA_classifier(nn.Module):
     def __init__(self, extractor, layer_sizes, classifier):
         super(SA_classifier, self).__init__()
@@ -74,15 +66,13 @@ class SA_classifier(nn.Module):
         for param in self.extractor.named_parameters():
             param[1].requires_grad=False 
    
-    
     def forward(self, x, Feature_return = False):
         input_ids = torch.tensor(x['input_ids']).to(device)
         attention_mask = torch.tensor(x['attention_mask']).to(device)
         hidden_states = self.extractor(input_ids, attention_mask = attention_mask)
         x_feat = hidden_states[0][:,0,:]
         if Feature_return:
-            return x_feat
-        
+            return x_feat     
         x_feat = self.dropout(x_feat)
         output = self.classifier(x_feat)
         return output

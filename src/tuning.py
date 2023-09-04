@@ -36,11 +36,7 @@ def model_tuning(model, tuning_method):
                                         #  num_layers = 12,
                                         #  token_dim = 768,
                                         #  num_attention_heads = 12,
-                                         num_virtual_tokens=10)
-   
-   
-   
-    
+                                         num_virtual_tokens=10)  
     model_peft = get_peft_model(model, peft_config)
     model_peft.print_trainable_parameters()
     return model_peft
