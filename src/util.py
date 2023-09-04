@@ -15,6 +15,11 @@ import os
 import warnings
 import yaml
 from pathlib import Path
+task_path = './tasks/'
+emb_path = './emb/'
+train_path = './SST2_train.tsv'
+val_path = './SST2_dev.tsv'
+test_path = './SST2_test.tsv'
 # run_config_file = Path('/root/configs/default.yaml')
 
 # seed = 

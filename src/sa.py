@@ -173,36 +173,24 @@ def prompt(model):
     return model_peft
 
 if __name__ == "__main__":
-    task_path = './tasks/'
-    emb_path = './emb/'
-    train_path = './SST2_train.tsv'
-    val_path = './SST2_dev.tsv'
-    test_path = './SST2_test.tsv'
+    
     os.makedirs(task_path, exist_ok=True)
     os.makedirs(emb_path, exist_ok=True)
-    task_path = os.path.join(task_path, 'promp_dml_t5.pth')
+    model_save_name = run_config['model_save_name']
+    task_path = os.path.join(task_path, model_save_name)
     emb_train_path = os.path.join(emb_path, 'emb_train')
     emb_test_path = os.path.join(emb_path, 'emb_test')
     train_dataset, val_dataset = SA_processing(train_path, val_path)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size= BATCH_SIZE, shuffle=True)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True)
     
-    # full bert
-    # model_name = 'bert-base-uncased'
-    # model_name = "roberta-base"
-    # model_name = 'microsoft/deberta-base'
+    
     model_name = run_config['model_name']
     extractor = AutoModel.from_pretrained(model_name)
     
-    # distill bert 
-    # model_name = 'distilbert-base-uncased'
-    # extractor = ppb.DistilBertModel.from_pretrained(model_name)
-    # sac = prompt(extractor)
-    # hhh
-    # model = SA_classifier(extractor, [768,2])
+  
     # sac = prompt(model)
     sac = prompt(extractor)
-    # sac = extractor 
    
     # bert params trainable
     n_components = 768
@@ -210,8 +198,8 @@ if __name__ == "__main__":
     
     task = SA_classifier(sac, layer_sizes).to(device)
     lr = run_config["learning_rate"]
-    epoch = 100
-    step_size = 10
+    epoch = run_config['epoch']
+    
     run_task(task_path, task, train_loader, val_loader, lr, epoch)
     set_model(task, task_path) 
     test(task, test_path, BATCH_SIZE)
