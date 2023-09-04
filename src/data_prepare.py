@@ -3,9 +3,9 @@ from util import *
 
 run_config = load_config()
 
-def data_preprocessing(data_url = 'https://github.com/clairett/pytorch-sentiment-classification/raw/master/data/SST2/train.tsv', n_samples = None):
+def data_loading(data_path, n_samples = None):
     
-    df = pd.read_csv(data_url, delimiter='\t', header=None)
+    df = pd.read_csv(data_path, delimiter='\t', header=None)
     # is none, means return all the samples, no need sampling
     if n_samples is None:
         df_sample = df
@@ -20,9 +20,7 @@ def data_preprocessing(data_url = 'https://github.com/clairett/pytorch-sentiment
         df_sample = pd.concat([df0_sample, df1_sample], ignore_index=True, axis=0)    
     text = df_sample[0].values.tolist()
     labels = df_sample[1].values.tolist()
-    
-
-    
+      
     return text, labels
 
 def testlabel(labels):
@@ -43,8 +41,8 @@ def token_preprocessing(text):
 
 def SA_processing(train_path, dev_path):
     n_samplings = run_config['num_samplings']
-    train_text, train_label = data_preprocessing(train_path, n_samples = n_samplings)
-    val_text, val_label = data_preprocessing(dev_path, n_samples= n_samplings)
+    train_text, train_label = data_loading(train_path, n_samples = n_samplings)
+    val_text, val_label = data_loading(dev_path, n_samples= n_samplings)
     train_encod = token_preprocessing(train_text)
     val_encod = token_preprocessing(val_text)
     train_dataset = CustomData(train_encod, train_label)

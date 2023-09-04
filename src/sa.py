@@ -28,7 +28,6 @@ if __name__ == "__main__":
     model_name = run_config['model_name']
     extractor = AutoModel.from_pretrained(model_name)
     
-  
     # sac = prompt(model)
     tuning_method = run_config['tuning_method']
     sac = model_tuning(extractor, tuning_method)

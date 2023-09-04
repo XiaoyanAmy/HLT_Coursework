@@ -57,15 +57,7 @@ class SA_classifier(nn.Module):
             self.classifier = MLP(layer_sizes)
         else:
             self.classifier = DisMax(layer_sizes[0], layer_sizes[1])
-        # self.freeze_bert()
     
-    def freeze_bert(self):
-        """Freezes the parameters of BERT so when BertWithCustomNNClassifier is trained
-        only the wieghts of the custom classifier are modified.
-        """
-        for param in self.extractor.named_parameters():
-            param[1].requires_grad=False 
-   
     def forward(self, x, Feature_return = False):
         input_ids = torch.tensor(x['input_ids']).to(device)
         attention_mask = torch.tensor(x['attention_mask']).to(device)
