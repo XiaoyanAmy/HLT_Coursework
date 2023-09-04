@@ -6,7 +6,7 @@ from util import *
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AdamW
 from transformers import get_linear_schedule_with_warmup
-from data_prepare import data_preprocessing, token_preprocessing, CustomData
+from data_prepare import data_loading, token_preprocessing, CustomData
 
 from pytorch_metric_learning import losses
 from loss_funcs import FocalLossAdaptive
@@ -32,12 +32,12 @@ def save_model(model, optimizer, epoch, lr_sched, save_file = None):
     del state
     
 def test_model(model, test_data_path, test_batch_size):
-  test_text, test_label = data_preprocessing(test_data_path, n_samples = None)
+  test_text, test_label = data_loading(test_data_path, n_samples = None)
   test_encod = token_preprocessing(test_text)
   test_dataset = CustomData(test_encod, test_label)
   test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
   test_acc = validate(model, test_loader)
-  print(">>>>>>>>>>>>accuracy<<<<<<<<<<", test_acc)
+  print(">>>>>>>>>>>>accuracy<<<<<<<<<<", test_acc.item())
   return test_acc
   
 def validate(model, vali_loader):
@@ -57,14 +57,11 @@ def validate(model, vali_loader):
     return correct / len(vali_loader.dataset)
 
 def train(model, optimizer, scheduler, train_loader, vali_loader, epoch, model_path, classifier):
-      # model.to(device)
   model.train()
   now = datetime.now()
   dt = now.strftime("%d-%m-%y_%H-%M-%S")
   logger = SummaryWriter(log_dir=f"./tf-logs/{dt}")
   criterion = nn.CrossEntropyLoss()
-#   criterion = FocalLossAdaptive()
-#   criterion = FocalLoss(gamma=0.7, weights=weights)
   loss_feat = losses.TripletMarginLoss()
   best_vali_er = np.inf
   best_vali_acc = 0
@@ -91,9 +88,7 @@ def train(model, optimizer, scheduler, train_loader, vali_loader, epoch, model_p
     
     vali_acc = validate(model, vali_loader)
     logger.add_scalar("vali_acc", vali_acc.item(), global_step=ep, walltime=None)
-    # logger.add_scalar("train_total_loss", train_total_loss.item(), global_step=ep, walltime=None)
     logger.add_scalar("train_loss", train_loss.item(), global_step=ep, walltime=None)
-    # print(train_main_loss.item(), train_cl_loss.item())
     print('Train Epoch: {}\ttr_loss:{:.6f}\tva_acc: {:.6f}'.format(ep, train_loss.item(), vali_acc.item()))
     
     # save the best model
