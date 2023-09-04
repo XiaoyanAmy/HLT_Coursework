@@ -19,5 +19,4 @@ num_hidden_states: 768
 # 1 stands for prompt tuning, and 
 # 2 stands for prefix tuning 
 tuning_method: 1 
-dml: 1
 classifier: dml # please choose from {li, dml}, li stands for linear layer, dml stands for deep metric learning
