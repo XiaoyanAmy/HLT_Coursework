@@ -6,4 +6,14 @@ model_name: 'microsoft/deberta-base'
 seed: 42
 sampling_random_state: 42
 batch_size: 8
-learning_rate: 5e-2
+learning_rate: 5.0e-2
+model_save_name: promp_dml_roberta.pth
+epoch: 100
+num_hidden_states: 768
+# tuning method can be chosen among {0, 1, 2},
+# where 0 stands for fine tuning
+# 1 stands for prompt tuning, and 
+# 2 stands for prefix tuning 
+tuning_method: 1 
+dml: 1
+classifier: dml # please choose from {li, dml}, li stands for linear layer, dml stands for deep metric learning

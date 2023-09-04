@@ -1,19 +1,16 @@
 from transformers import AutoTokenizer
 from util import *
-# from pathlib import Path
-# run_config_file = Path('/root/configs/default.yaml')
+
 run_config = load_config()
 
 def data_preprocessing(data_url = 'https://github.com/clairett/pytorch-sentiment-classification/raw/master/data/SST2/train.tsv', n_samples = None):
     
     df = pd.read_csv(data_url, delimiter='\t', header=None)
+    # is none, means return all the samples, no need sampling
     if n_samples is None:
         df_sample = df
     else:
-        ##this sample cause classed not balanced
-        # p0, p1 = 0.2, 0.8
-        # df_sample = df.sample(n_samples, random_state= 42)
-        ## class balanced sampling
+        ## to ensure class balanced sampling
         p0, p1 = 0.5, 0.5
         df0 = df.loc[df[1] == 0]
         df1 = df.loc[df[1] == 1]
@@ -24,11 +21,11 @@ def data_preprocessing(data_url = 'https://github.com/clairett/pytorch-sentiment
     text = df_sample[0].values.tolist()
     labels = df_sample[1].values.tolist()
     
-    count = 0
-    for i in range(len(labels)):
-        if labels[i]:
-            count += 1
-    print(count, len(labels) - count)
+    # count = 0
+    # for i in range(len(labels)):
+    #     if labels[i]:
+    #         count += 1
+    # print(count, len(labels) - count)
     
     return text, labels
 
@@ -46,34 +43,16 @@ def data_split(all_texts, all_labels):
     return train_text , val_text , train_label , val_label
     
 def token_preprocessing(text):
-    #full bert
-    # model_name = 'bert-base-uncased'
-    # model_name = "roberta-base"
-    # model_name = 'microsoft/deberta-base'
+   
     model_name = run_config['model_name']
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    #distilled bert
-    # model_name = 'distilbert-base-uncased'
-    # tokenizer = DistilBertTokenizer.from_pretrained(model_name)
     encoded = tokenizer(text, truncation=True , padding=True)
-    # # autotokenizer
-    # model_name_or_path = "roberta-large"
-    # tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, padding_side='right')
-    
-    # if getattr(tokenizer, "pad_token_id") is None:
-    #     tokenizer.pad_token_id = tokenizer.eos_token_id
-        
-    # encoded = tokenizer(text, truncation=True , padding=True)
     return encoded
 
 
 def SA_processing(train_path, dev_path):
-    # texts, labels = data_preprocessing(data_url)
-    # train_text , val_text , train_label , val_label = data_split(texts, labels)
-    # dev_url = './SST2_dev.tsv'
-    # train_url = './SST2_train.tsv'
+   
     train_text, train_label = data_preprocessing(train_path, n_samples = 200)
-    # dev_url = 'https://github.com/clairett/pytorch-sentiment-classification/raw/master/data/SST2/dev.tsv'
     val_text, val_label = data_preprocessing(dev_path, n_samples= 200)
     train_encod = token_preprocessing(train_text)
     val_encod = token_preprocessing(val_text)
@@ -82,7 +61,7 @@ def SA_processing(train_path, dev_path):
     return train_dataset, val_dataset
     
 class CustomData(torch.utils.data.Dataset):
-    '''Class to store the tweet data as pytorch dataset'''
+    '''Class to store the output of the Tokenizer as pytorch dataset'''
     
     def __init__(self , encodings , labels):
         self.encodings = encodings
@@ -90,7 +69,6 @@ class CustomData(torch.utils.data.Dataset):
         
     def __getitem__(self, idx):
         item = {key : torch.tensor(val[idx]) for key , val in self.encodings.items() }
-        # item['labels'] = torch.tensor(self.labels[idx])
         target = self.targets[idx]
         return (item, target)
     

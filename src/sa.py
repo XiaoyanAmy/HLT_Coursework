@@ -44,20 +44,6 @@ seed = run_config["seed"]
 torch.manual_seed(seed)
 BATCH_SIZE = run_config["batch_size"]
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-def get_attention_mask(padded):
-    """
-    If we directly send padded to BERT, that would slightly confuse it. We need to create another variable to tell 
-    it to ignore (mask)the padding we've added when it's processing its input.
-    That's what attention_mask is.
-    """
-    attention_mask = np.where(padded != 0, 1, 0)
-    return attention_mask
-    
-
-    
-
 
 class SA_exactor(nn.Module):
     def __init__(self, exactor):
@@ -109,14 +95,15 @@ def custom_classifier(model,layer_sizes):
        return model
        
 class SA_classifier(nn.Module):
-    def __init__(self, extractor, layer_sizes, eta = [1,1]):
+    def __init__(self, extractor, layer_sizes, classifier):
         super(SA_classifier, self).__init__()
         self.extractor = extractor
         self.dropout = nn.Dropout()
-        # self.classifier = MLP(layer_sizes)
-        self.classifier = DisMaxLossFirstPart(layer_sizes[0], layer_sizes[1])
-        self.eta = nn.Parameter(torch.Tensor(eta)) 
-        # self.adapter = MLP([layer_sizes[0], layer_sizes[0]], final_relu= True)
+        assert classifier in ['li', 'dml']
+        if classifier == 'li':
+            self.classifier = MLP(layer_sizes)
+        else:
+            self.classifier = DisMaxLossFirstPart(layer_sizes[0], layer_sizes[1])
         # self.freeze_bert()
     
     def freeze_bert(self):
@@ -140,33 +127,31 @@ class SA_classifier(nn.Module):
         return output
   
   
-def prompt(model):
-    
-    # peft_type = PeftType.PROMPT_TUNING
-    peft_config = PromptTuningConfig(task_type="FEATURE_EXTRACTION", 
-                                    #  token_dim=768, 
-                                    #  num_attention_heads = 2, num_layers=2, 
-                                     num_virtual_tokens=7,
-                                    #  prompt_tuning_init="TEXT",
-                                    #  prompt_tuning_init_text="Predict if sentiment of this review is positive, negative or neutral"
-    )
-#     peft_config = LoraConfig(
-#     task_type= "FEATURE_EXTRACTION", r=8, lora_alpha=32, lora_dropout=0.1,
-#     target_modules=['query', 'value'],
-#     modules_to_save=["classifier"],
-    
-# )
-    # prefix tuning
-    # peft_type = PeftType.PREFIX_TUNING
-    # peft_config = PrefixTuningConfig(task_type="FEATURE_EXTRACTION", 
-    #                                 #  num_layers = 12,
-    #                                 #  token_dim = 768,
-    #                                 #  num_attention_heads = 12,
-    #                                  num_virtual_tokens=10)
+def prompt(model, tuning_method):
+    assert(tuning_method in [0,1,2])
+    if tuning_method == 0:
+        return model
+    elif tuning_method == 1:
+        #   prompt tuning
+        peft_type = PeftType.PROMPT_TUNING
+        peft_config = PromptTuningConfig(task_type="FEATURE_EXTRACTION", 
+                                        #  token_dim=768, 
+                                        #  num_attention_heads = 2, num_layers=2, 
+                                        num_virtual_tokens=7,
+                                        #  prompt_tuning_init="TEXT",
+                                        #  prompt_tuning_init_text="Predict if sentiment of this review is positive, negative or neutral"
+        )
+    elif tuning_method == 2:
+        # prefix tuning
+        peft_type = PeftType.PREFIX_TUNING
+        peft_config = PrefixTuningConfig(task_type="FEATURE_EXTRACTION", 
+                                        #  num_layers = 12,
+                                        #  token_dim = 768,
+                                        #  num_attention_heads = 12,
+                                         num_virtual_tokens=10)
    
    
-    # peft_type = PeftType.IA3
-    # peft_config = IA3Config(task_type="FEATURE_EXTRACTION", inference_mode=False)
+   
     
     model_peft = get_peft_model(model, peft_config)
     model_peft.print_trainable_parameters()
@@ -175,11 +160,8 @@ def prompt(model):
 if __name__ == "__main__":
     
     os.makedirs(task_path, exist_ok=True)
-    os.makedirs(emb_path, exist_ok=True)
     model_save_name = run_config['model_save_name']
     task_path = os.path.join(task_path, model_save_name)
-    emb_train_path = os.path.join(emb_path, 'emb_train')
-    emb_test_path = os.path.join(emb_path, 'emb_test')
     train_dataset, val_dataset = SA_processing(train_path, val_path)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size= BATCH_SIZE, shuffle=True)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True)
@@ -190,27 +172,20 @@ if __name__ == "__main__":
     
   
     # sac = prompt(model)
-    sac = prompt(extractor)
+    tuning_method = run_config['tuning_method']
+    sac = prompt(extractor, tuning_method)
    
     # bert params trainable
-    n_components = 768
+    n_components = run_config['num_hidden_states']
     layer_sizes = [n_components, 2]
     
-    task = SA_classifier(sac, layer_sizes).to(device)
+    classifier = run_config['classifier']
+    
+    task = SA_classifier(sac, layer_sizes, classifier).to(device)
     lr = run_config["learning_rate"]
     epoch = run_config['epoch']
     
-    run_task(task_path, task, train_loader, val_loader, lr, epoch)
+    run_task(task_path, task, train_loader, val_loader, lr, epoch, classifier)
     set_model(task, task_path) 
     test(task, test_path, BATCH_SIZE)
-    
-    hhh
-    
-    features = get_embedding(padded, model)
-    train_features, test_features, train_labels, test_labels = train_test_split(features, labels)
-    
-    lr_clf = LogisticRegression()
-    lr_clf.fit(train_features, train_labels)
-    print(lr_clf.score(test_features, test_labels))
-    
     
