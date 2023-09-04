@@ -11,9 +11,11 @@ from  torch.utils.data import TensorDataset
 import torch.nn as nn
 import torch.nn.functional as F
 import os
+from transformers import logging
 import warnings
 import yaml
 from pathlib import Path
+logging.set_verbosity_warning()
 task_path = './tasks/'
 train_path = './SST2_train.tsv'
 val_path = './SST2_dev.tsv'

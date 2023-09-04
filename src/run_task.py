@@ -10,12 +10,7 @@ from data_prepare import data_loading, token_preprocessing, CustomData
 
 from pytorch_metric_learning import losses
 from loss_funcs import FocalLossAdaptive
-
-
-
-
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
 
 def set_model(model, model_path):
     model.load_state_dict(torch.load(model_path)['model'])
@@ -42,8 +37,7 @@ def test_model(model, test_data_path, test_batch_size):
   
 def validate(model, vali_loader):
     model.eval()
-    correct = 0
-    
+    correct = 0  
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(vali_loader):
             # data, target = data.to(device), target.to(device)
@@ -68,7 +62,6 @@ def train(model, optimizer, scheduler, train_loader, vali_loader, epoch, model_p
   for ep in tqdm(range(epoch)):
     model.train()
     train_loss = 0
-    
     for batch_idx, (data, target) in enumerate(train_loader):
       optimizer.zero_grad()
       bsz = target.shape[0]
@@ -116,6 +109,5 @@ def run_task(model_path, model, train_loader, test_loader, lr, epoch, classifier
                 )
     if os.path.isfile(model_path):
         resume_model(model_path, model, opt, scheduler)
-        # test(model, test_loader)
     
     train(model, opt, scheduler, train_loader, test_loader, epoch, model_path, classifier)

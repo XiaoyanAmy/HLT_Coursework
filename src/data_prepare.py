@@ -4,7 +4,6 @@ from util import *
 run_config = load_config()
 
 def data_loading(data_path, n_samples = None):
-    
     df = pd.read_csv(data_path, delimiter='\t', header=None)
     # is none, means return all the samples, no need sampling
     if n_samples is None:

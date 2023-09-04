@@ -1,6 +1,9 @@
 '''
 Explore fine-tuning, prompt tuning, prefix tuning
 '''
+from util import load_config
+run_config = load_config()
+
 from peft import (
     get_peft_config,
     get_peft_model,
@@ -17,6 +20,7 @@ from peft import (
 
 def model_tuning(model, tuning_method):
     assert(tuning_method in [0,1,2])
+    num_virtual_tokens = run_config['num_virtual_tokens']
     if tuning_method == 0:
         return model
     elif tuning_method == 1:
@@ -25,7 +29,7 @@ def model_tuning(model, tuning_method):
         peft_config = PromptTuningConfig(task_type="FEATURE_EXTRACTION", 
                                         #  token_dim=768, 
                                         #  num_attention_heads = 2, num_layers=2, 
-                                        num_virtual_tokens=7,
+                                        num_virtual_tokens=num_virtual_tokens,
                                         #  prompt_tuning_init="TEXT",
                                         #  prompt_tuning_init_text="Predict if sentiment of this review is positive, negative or neutral"
         )
@@ -36,7 +40,7 @@ def model_tuning(model, tuning_method):
                                         #  num_layers = 12,
                                         #  token_dim = 768,
                                         #  num_attention_heads = 12,
-                                         num_virtual_tokens=10)  
+                                         num_virtual_tokens=num_virtual_tokens)  
     model_peft = get_peft_model(model, peft_config)
     model_peft.print_trainable_parameters()
     return model_peft
