@@ -6,8 +6,9 @@ model_name: 'microsoft/deberta-base'
 seed: 42
 
 # num_samplings: the number of samplings to train/validate the model
-# in a low datasetting.
-num_samplings: 200 
+# in a low datasetting. None represent all data
+num_samplings_train: 200 
+num_samplings_val: 200 
 sampling_random_state: 42
 batch_size: 8
 learning_rate: 5.0e-2

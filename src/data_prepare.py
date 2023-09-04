@@ -40,9 +40,10 @@ def token_preprocessing(text):
 
 
 def SA_processing(train_path, dev_path):
-    n_samplings = run_config['num_samplings']
-    train_text, train_label = data_loading(train_path, n_samples = n_samplings)
-    val_text, val_label = data_loading(dev_path, n_samples= n_samplings)
+    n_train_samplings = run_config['num_samplings_train']
+    n_val_samplings = run_config['num_samplings_val']
+    train_text, train_label = data_loading(train_path, n_samples = n_train_samplings)
+    val_text, val_label = data_loading(dev_path, n_samples= n_val_samplings)
     train_encod = token_preprocessing(train_text)
     val_encod = token_preprocessing(val_text)
     train_dataset = CustomData(train_encod, train_label)
