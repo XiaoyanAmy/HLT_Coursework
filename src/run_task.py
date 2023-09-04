@@ -31,7 +31,7 @@ def save_model(model, optimizer, epoch, lr_sched, save_file = None):
     torch.save(state, save_file)
     del state
     
-def test(model, test_data_path, test_batch_size):
+def test_model(model, test_data_path, test_batch_size):
   test_text, test_label = data_preprocessing(test_data_path, n_samples = None)
   test_encod = token_preprocessing(test_text)
   test_dataset = CustomData(test_encod, test_label)

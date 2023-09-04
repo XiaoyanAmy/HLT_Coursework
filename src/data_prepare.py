@@ -21,29 +21,20 @@ def data_preprocessing(data_url = 'https://github.com/clairett/pytorch-sentiment
     text = df_sample[0].values.tolist()
     labels = df_sample[1].values.tolist()
     
-    # count = 0
-    # for i in range(len(labels)):
-    #     if labels[i]:
-    #         count += 1
-    # print(count, len(labels) - count)
+
     
     return text, labels
 
 def testlabel(labels):
+    # count the number of different labels
     count = 0
     for i in range(len(labels)):
         if labels[i]:
             count += 1
     print(count, len(labels) - count)
-    
-def data_split(all_texts, all_labels):
-    train_text , val_text , train_label , val_label = train_test_split(all_texts, all_labels, random_state = 42)
-    testlabel(train_label, len(train_label))
-    testlabel(val_label, len(val_label))
-    return train_text , val_text , train_label , val_label
+  
     
 def token_preprocessing(text):
-   
     model_name = run_config['model_name']
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     encoded = tokenizer(text, truncation=True , padding=True)
@@ -51,9 +42,9 @@ def token_preprocessing(text):
 
 
 def SA_processing(train_path, dev_path):
-   
-    train_text, train_label = data_preprocessing(train_path, n_samples = 200)
-    val_text, val_label = data_preprocessing(dev_path, n_samples= 200)
+    n_samplings = run_config['num_samplings']
+    train_text, train_label = data_preprocessing(train_path, n_samples = n_samplings)
+    val_text, val_label = data_preprocessing(dev_path, n_samples= n_samplings)
     train_encod = token_preprocessing(train_text)
     val_encod = token_preprocessing(val_text)
     train_dataset = CustomData(train_encod, train_label)
@@ -75,8 +66,3 @@ class CustomData(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.targets)
     
-    
-    
-if __name__ == "__main__":
-    train_dataset, val_dataset = SA_processing()
-    print(train_dataset[0])
