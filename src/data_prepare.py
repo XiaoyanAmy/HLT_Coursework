@@ -1,12 +1,8 @@
-
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
-import torch
 from transformers import AutoTokenizer
-from transformers import DistilBertTokenizer
-torch.manual_seed(42)
-import random
+from util import *
+# from pathlib import Path
+# run_config_file = Path('/root/configs/default.yaml')
+run_config = load_config()
 
 def data_preprocessing(data_url = 'https://github.com/clairett/pytorch-sentiment-classification/raw/master/data/SST2/train.tsv', n_samples = None):
     
@@ -21,8 +17,9 @@ def data_preprocessing(data_url = 'https://github.com/clairett/pytorch-sentiment
         p0, p1 = 0.5, 0.5
         df0 = df.loc[df[1] == 0]
         df1 = df.loc[df[1] == 1]
-        df0_sample = df0.sample(n = int(n_samples*p0), random_state= 42)
-        df1_sample = df1.sample(n = int(n_samples*p1), random_state=42)
+        random_state = run_config['sampling_random_state']
+        df0_sample = df0.sample(n = int(n_samples*p0), random_state= random_state)
+        df1_sample = df1.sample(n = int(n_samples*p1), random_state= random_state)
         df_sample = pd.concat([df0_sample, df1_sample], ignore_index=True, axis=0)    
     text = df_sample[0].values.tolist()
     labels = df_sample[1].values.tolist()
@@ -52,7 +49,8 @@ def token_preprocessing(text):
     #full bert
     # model_name = 'bert-base-uncased'
     # model_name = "roberta-base"
-    model_name = 'microsoft/deberta-base'
+    # model_name = 'microsoft/deberta-base'
+    model_name = run_config['model_name']
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     #distilled bert
     # model_name = 'distilbert-base-uncased'

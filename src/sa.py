@@ -1,21 +1,28 @@
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn import random_projection
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import cross_val_score
-import torch
-import torch.nn as nn
-import transformers as ppb
+# import numpy as np
+# import pandas as pd
+# from sklearn.model_selection import train_test_split
+# from sklearn import random_projection
+# from sklearn.linear_model import LogisticRegression
+# from sklearn.model_selection import GridSearchCV
+# from sklearn.model_selection import cross_val_score
+# import torch
+# import torch.nn as nn
+# import transformers as ppb
 from transformers import BertModel, AutoModel, BertForSequenceClassification, BertConfig, AutoModelForSequenceClassification, AutoTokenizer
-import os
-import warnings
-import torch.nn.functional as F
-from util import MLP, create_feature_loader, transform_dataset, DisMaxLossFirstPart
+# import os
+# import warnings
+# import torch.nn.functional as F
+# from util import MLP, create_feature_loader, transform_dataset, DisMaxLossFirstPart
 from run_task import run_task, set_model, test
 from data_prepare import SA_processing
+from util import *
 
+# from pathlib import Path
+# run_config_file = Path('/root/configs/default.yaml')
+run_config = load_config()
+print("=======")
+print(run_config)
+print("==========")
 from peft import (
     get_peft_config,
     get_peft_model,
@@ -32,8 +39,10 @@ from peft import (
 
 warnings.filterwarnings('ignore')
 
-torch.manual_seed(42)
-BATCH_SIZE = 8
+
+seed = run_config["seed"]
+torch.manual_seed(seed)
+BATCH_SIZE = run_config["batch_size"]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -181,7 +190,8 @@ if __name__ == "__main__":
     # full bert
     # model_name = 'bert-base-uncased'
     # model_name = "roberta-base"
-    model_name = 'microsoft/deberta-base'
+    # model_name = 'microsoft/deberta-base'
+    model_name = run_config['model_name']
     extractor = AutoModel.from_pretrained(model_name)
     
     # distill bert 
@@ -199,7 +209,7 @@ if __name__ == "__main__":
     layer_sizes = [n_components, 2]
     
     task = SA_classifier(sac, layer_sizes).to(device)
-    lr = 5e-2
+    lr = run_config["learning_rate"]
     epoch = 100
     step_size = 10
     run_task(task_path, task, train_loader, val_loader, lr, epoch)

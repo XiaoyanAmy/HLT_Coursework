@@ -1,15 +1,8 @@
         
 from sklearn import random_projection
 from datetime import datetime
-import numpy as np
 from tqdm import tqdm
-import torch
-import torch.nn as nn
-# from lion_pytorch import Lion
-import torch.optim as optim
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.optim.lr_scheduler import MultiStepLR
+from util import *
 from torch.utils.tensorboard import SummaryWriter
 from transformers import AdamW
 from transformers import get_linear_schedule_with_warmup
@@ -18,12 +11,12 @@ from data_prepare import data_preprocessing, token_preprocessing, CustomData
 from pytorch_metric_learning import losses
 from loss_funcs import FocalLossAdaptive
 
-import os
+
+
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import argparse
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-torch.manual_seed(42)
 
 def set_model(model, model_path):
     model.load_state_dict(torch.load(model_path)['model'])
@@ -93,14 +86,14 @@ def train(model, optimizer, scheduler, train_loader, vali_loader, epoch, model_p
       # data,  target = data.to(device), target.to(device)
       output = model(data).to(device)
       loss = criterion(output, target)
-    #   #**
-    #   feature = model(data, Feature_return = True)
-    #   loss_emb = loss_feat(feature, target)
-    # # #   ##** auto eta
-    #   loss_all = [loss, loss_emb]
-    #   loss = (torch.stack(loss_all) * torch.exp(-model.eta) + 0.5*model.eta).sum()
-    #   ##**
-      # loss += 1*loss_emb
+      #**
+      feature = model(data, Feature_return = True)
+      loss_emb = loss_feat(feature, target)
+    #   ##** auto eta
+      # loss_all = [loss, loss_emb]
+      # loss = (torch.stack(loss_all) * torch.exp(-model.eta) + 0.5*model.eta).sum()
+      ##**
+      loss += 1*loss_emb
       #**
     
       train_loss += bsz*loss
@@ -130,13 +123,7 @@ def resume_model(model_path, model, optim, scheduler):
     scheduler.load_state_dict(checkpoint['lr_sched'])
     
 def run_task(model_path, model, train_loader, test_loader, lr = 2e-5, epoch = 30):  
-    #flag1: feed the model with pretrained features, othewise, feed the model with data/tokens
-    # opt = optim.Adadelta(model.parameters(), lr=lr) #**
-    
-    # scheduler = CosineAnnealingWarmRestarts(opt, 
-    #                                     T_0 = step_size,# Number of iterations for the first restart
-    #                                     T_mult = 1, # A factor increases TiTi​ after a restart
-    #                                     eta_min = 1e-5) # Minimum learning rate  #**
+   
     opt = AdamW(model.parameters(), lr=lr, correct_bias=False)
     total_steps = len(train_loader) * epoch
     scheduler = get_linear_schedule_with_warmup(
@@ -146,5 +133,6 @@ def run_task(model_path, model, train_loader, test_loader, lr = 2e-5, epoch = 30
                 )
     if os.path.isfile(model_path):
         resume_model(model_path, model, opt, scheduler)
+        # test(model, test_loader)
     
     train(model, opt, scheduler, train_loader, test_loader, epoch, model_path)

@@ -1,10 +1,35 @@
-import torch
 import math
-import torch.nn as nn
 import os
+import random
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+
+import torch
 from  torch.utils.data import TensorDataset 
+import torch.nn as nn
 import torch.nn.functional as F
-torch.manual_seed(42)
+import os
+import warnings
+import yaml
+from pathlib import Path
+# run_config_file = Path('/root/configs/default.yaml')
+
+# seed = 
+# torch.manual_seed(42)
+
+def load_config():
+    with open(Path('/root/configs/default.yaml'), "r") as config_file:
+        try:
+            run_config = yaml.safe_load(config_file)
+        except yaml.YAMLError as exc:
+            print(exc)
+            return {}
+
+    return run_config
+
 
 class MLP(nn.Module):
     # layer_sizes[0] is the dimension of the input
@@ -90,3 +115,5 @@ class DisMaxLossFirstPart(nn.Module):
 
     def extra_repr(self):
         return 'num_features={}, num_classes={}'.format(self.num_features, self.num_classes)
+
+
