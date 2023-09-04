@@ -21,8 +21,8 @@ def data_preprocessing(data_url = 'https://github.com/clairett/pytorch-sentiment
         p0, p1 = 0.5, 0.5
         df0 = df.loc[df[1] == 0]
         df1 = df.loc[df[1] == 1]
-        df0_sample = df0.sample(n = int(n_samples*p0), random_state= 0)
-        df1_sample = df1.sample(n = int(n_samples*p1), random_state=0)
+        df0_sample = df0.sample(n = int(n_samples*p0), random_state= 42)
+        df1_sample = df1.sample(n = int(n_samples*p1), random_state=42)
         df_sample = pd.concat([df0_sample, df1_sample], ignore_index=True, axis=0)    
     text = df_sample[0].values.tolist()
     labels = df_sample[1].values.tolist()
@@ -50,7 +50,9 @@ def data_split(all_texts, all_labels):
     
 def token_preprocessing(text):
     #full bert
-    model_name = 'bert-base-uncased'
+    # model_name = 'bert-base-uncased'
+    # model_name = "roberta-base"
+    model_name = 'microsoft/deberta-base'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     #distilled bert
     # model_name = 'distilbert-base-uncased'
@@ -72,9 +74,9 @@ def SA_processing(train_path, dev_path):
     # train_text , val_text , train_label , val_label = data_split(texts, labels)
     # dev_url = './SST2_dev.tsv'
     # train_url = './SST2_train.tsv'
-    train_text, train_label = data_preprocessing(train_path, n_samples = 4000)
+    train_text, train_label = data_preprocessing(train_path, n_samples = 200)
     # dev_url = 'https://github.com/clairett/pytorch-sentiment-classification/raw/master/data/SST2/dev.tsv'
-    val_text, val_label = data_preprocessing(dev_path, n_samples= None)
+    val_text, val_label = data_preprocessing(dev_path, n_samples= 200)
     train_encod = token_preprocessing(train_text)
     val_encod = token_preprocessing(val_text)
     train_dataset = CustomData(train_encod, train_label)
